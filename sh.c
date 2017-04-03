@@ -8,9 +8,9 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-/* MARK NAME Seu Nome Aqui */
-/* MARK NAME Nome de Outro Integrante Aqui */
-/* MARK NAME E Etc */
+/* Fernanda Almeida Duarte */
+/* Guilherme Lourenço */
+/* Rafael de Oliveira Ribeiro */
 
 /****************************************************************
  * Shell xv6 simplificado
@@ -36,7 +36,7 @@ struct execcmd {
 };
 
 struct redircmd {
-  int type;          // < ou > 
+  int type;          // < ou >
   struct cmd *cmd;   // o comando a rodar (ex.: um execcmd)
   char *file;        // o arquivo de entrada ou saída
   int mode;          // o modo no qual o arquivo deve ser aberto
@@ -63,7 +63,7 @@ runcmd(struct cmd *cmd)
 
   if(cmd == 0)
     exit(0);
-  
+
   switch(cmd->type){
   default:
     fprintf(stderr, "tipo de comando desconhecido\n");
@@ -81,16 +81,21 @@ runcmd(struct cmd *cmd)
     break;
 
   case '>':
-  case '<':
-    rcmd = (struct redircmd*)cmd;
-    /* MARK START task3
-     * TAREFA3: Implemente codigo abaixo para executar
-     * comando com redirecionamento. */
-    fprintf(stderr, "redir nao implementado\n");
-    /* MARK END task3 */
-    runcmd(rcmd->cmd);
+  	rcmd = (struct redircmd*)cmd;
+	if(dup2(rcmd->fd, STDOUT_FILENO) < 0){
+		printf("Erro ao executar dup2.\n");
+	}
+	runcmd(rcmd->cmd);
     break;
 
+  case '<':
+    rcmd = (struct redircmd*)cmd;
+	if(dup2(rcmd->fd, STDIN_FILENO)){
+		printf("Erro ao executar dup2.\n");
+	}
+    runcmd(rcmd->cmd);
+    break;
+	
   case '|':
     pcmd = (struct pipecmd*)cmd;
     /* MARK START task4
@@ -99,7 +104,7 @@ runcmd(struct cmd *cmd)
     fprintf(stderr, "pipe nao implementado\n");
     /* MARK END task4 */
     break;
-  }    
+  }
   exit(0);
 }
 
@@ -146,7 +151,7 @@ int
 fork1(void)
 {
   int pid;
-  
+
   pid = fork();
   if(pid == -1)
     perror("fork");
@@ -208,7 +213,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
 {
   char *s;
   int ret;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -233,7 +238,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
   }
   if(eq)
     *eq = s;
-  
+
   while(s < es && strchr(whitespace, *s))
     s++;
   *ps = s;
@@ -244,7 +249,7 @@ int
 peek(char **ps, char *es, char *toks)
 {
   char *s;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -258,7 +263,7 @@ struct cmd *parseexec(char**, char*);
 
 /* Copiar os caracteres no buffer de entrada, comeando de s ate es.
  * Colocar terminador zero no final para obter um string valido. */
-char 
+char
 *mkcopy(char *s, char *es)
 {
   int n = es - s;
@@ -337,7 +342,7 @@ parseexec(char **ps, char *es)
   int tok, argc;
   struct execcmd *cmd;
   struct cmd *ret;
-  
+
   ret = execcmd();
   cmd = (struct execcmd*)ret;
 
@@ -363,4 +368,3 @@ parseexec(char **ps, char *es)
 }
 
 // vim: expandtab:ts=2:sw=2:sts=2
-
