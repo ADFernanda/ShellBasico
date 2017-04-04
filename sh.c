@@ -82,17 +82,26 @@ runcmd(struct cmd *cmd)
 
   case '>':
   	rcmd = (struct redircmd*)cmd;
-	int fd1 = creat(rcmd->file, 0644);
-	dup2(fd1 , STDOUT_FILENO);
-	close(fd1);
+	int fd1 = open(rcmd->file, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+	if(fd1 == -1){
+		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	}else{
+		dup2(fd1 , STDOUT_FILENO);
+		close(fd1);
+	}
 	runcmd(rcmd->cmd);
     break;
 
   case '<':
     rcmd = (struct redircmd*)cmd;
-	int fd2 = open(rcmd->file, O_RDONLY, 0);
-	dup2(fd2, STDIN_FILENO);
-	close(fd2);
+	int fd2 = open(rcmd->file, O_RDONLY, S_IRWXU);
+	if(fd2 == -1){
+		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	}
+	else{
+		dup2(fd2, STDIN_FILENO);
+		close(fd2);
+	}
     runcmd(rcmd->cmd);
     break;
 
@@ -135,7 +144,7 @@ main(void)
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       buf[strlen(buf)-1] = 0;
       if(chdir(buf+3) < 0)
-        fprintf(stderr, "reporte erro\n");
+        fprintf(stderr, "Erro ao alterar o diretorio atual.\n");
       continue;
     }
     /* MARK END task1 */
