@@ -74,28 +74,28 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit(0);
     /* MARK START task2
-     * TAREFA2: Implemente codigo abaixo para executar
-     * comandos simples. */
-    fprintf(stderr, "exec nao implementado\n");
+     */
+    execvp(ecmd->argv[0], ecmd->argv);
+    //fprintf(stderr, "exec nao implementado\n");
     /* MARK END task2 */
     break;
 
   case '>':
   	rcmd = (struct redircmd*)cmd;
-	if(dup2(rcmd->fd, STDOUT_FILENO) < 0){
-		printf("Erro ao executar dup2.\n");
-	}
+	int fd1 = creat(rcmd->file, 0644);
+	dup2(fd1 , STDOUT_FILENO);
+	close(fd1);
 	runcmd(rcmd->cmd);
     break;
 
   case '<':
     rcmd = (struct redircmd*)cmd;
-	if(dup2(rcmd->fd, STDIN_FILENO)){
-		printf("Erro ao executar dup2.\n");
-	}
+	int fd2 = open(rcmd->file, O_RDONLY, 0);
+	dup2(fd2, STDIN_FILENO);
+	close(fd2);
     runcmd(rcmd->cmd);
     break;
-	
+
   case '|':
     pcmd = (struct pipecmd*)cmd;
     /* MARK START task4
