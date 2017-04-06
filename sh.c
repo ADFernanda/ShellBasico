@@ -21,6 +21,8 @@
 
 #define MAXARGS 10
 
+#define TEMPORARY_FILE ".temp"
+
 /* Todos comandos tem um tipo.  Depois de olhar para o tipo do
  * comando, o código converte um *cmd para o tipo específico de
  * comando. */
@@ -56,7 +58,7 @@ struct cmd *parsecmd(char*); // Processar o linha de comando.
 void
 runcmd(struct cmd *cmd)
 {
-  int p[2], r;
+  int p[2], r, i;
   struct execcmd *ecmd;
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
@@ -76,7 +78,8 @@ runcmd(struct cmd *cmd)
     /* MARK START task2
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
-    fprintf(stderr, "exec nao implementado\n");
+    //fprintf(stderr, "exec nao implementado\n");
+    execvp(ecmd->argv[0], ecmd->argv);
     /* MARK END task2 */
     break;
 
@@ -96,10 +99,35 @@ runcmd(struct cmd *cmd)
     /* MARK START task4
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
-    fprintf(stderr, "pipe nao implementado\n");
+    //fprintf(stderr, "pipe nao implementado\n");
+    int outFile, inFile, outPid, inPid;
+    outFile = open(TEMPORARY_FILE, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+    if(outFile == -1){
+      fprintf(stderr, "Erro ao abrir o arquivo %s para escrita", TEMPORARY_FILE);
+    }
+    inFile = open(TEMPORARY_FILE, O_RDONLY, S_IRWXU);
+    if(inFile == -1){
+      fprintf(stderr, "Erro ao abrir o arquivo %s para leitura", TEMPORARY_FILE);
+    }
+    if(dup2(outFile, STDOUT_FILENO) != -1 && dup2(inFile, STDIN_FILENO) != -1){
+      close(outFile);
+      if((outPid = fork1()) == 0){
+        runcmd(pcmd->left);
+      }
+      if(dup2(STDERR_FILENO, STDOUT_FILENO) != -1){
+        close(inFile);
+        wait(&outPid);
+        if((inPid = fork1()) == 0){
+          runcmd(pcmd->right);
+        }
+        wait(&inPid);
+        kill(inPid, SIGCHLD);
+        remove(TEMPORARY_FILE);
+      }
+    }
     /* MARK END task4 */
     break;
-  }    
+  }
   exit(0);
 }
 
