@@ -8,9 +8,9 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-/* MARK NAME Seu Nome Aqui */
-/* MARK NAME Nome de Outro Integrante Aqui */
-/* MARK NAME E Etc */
+/* Fernanda Almeida Duarte */
+/* Guilherme Lourenço */
+/* Rafael de Oliveira Ribeiro */
 
 /****************************************************************
  * Shell xv6 simplificado
@@ -38,7 +38,7 @@ struct execcmd {
 };
 
 struct redircmd {
-  int type;          // < ou > 
+  int type;          // < ou >
   struct cmd *cmd;   // o comando a rodar (ex.: um execcmd)
   char *file;        // o arquivo de entrada ou saída
   int mode;          // o modo no qual o arquivo deve ser aberto
@@ -65,7 +65,7 @@ runcmd(struct cmd *cmd)
 
   if(cmd == 0)
     exit(0);
-  
+
   switch(cmd->type){
   default:
     fprintf(stderr, "tipo de comando desconhecido\n");
@@ -76,6 +76,7 @@ runcmd(struct cmd *cmd)
     if(ecmd->argv[0] == 0)
       exit(0);
     /* MARK START task2
+<<<<<<< HEAD
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
     //fprintf(stderr, "exec nao implementado\n");
@@ -84,13 +85,27 @@ runcmd(struct cmd *cmd)
     break;
 
   case '>':
+  	rcmd = (struct redircmd*)cmd;
+	int fd1 = open(rcmd->file, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+	if(fd1 == -1){
+		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	}else{
+		dup2(fd1 , STDOUT_FILENO);
+		close(fd1);
+	}
+	runcmd(rcmd->cmd);
+    break;
+
   case '<':
     rcmd = (struct redircmd*)cmd;
-    /* MARK START task3
-     * TAREFA3: Implemente codigo abaixo para executar
-     * comando com redirecionamento. */
-    fprintf(stderr, "redir nao implementado\n");
-    /* MARK END task3 */
+	int fd2 = open(rcmd->file, O_RDONLY, S_IRWXU);
+	if(fd2 == -1){
+		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	}
+	else{
+		dup2(fd2, STDIN_FILENO);
+		close(fd2);
+	}
     runcmd(rcmd->cmd);
     break;
 
@@ -158,7 +173,7 @@ main(void)
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
       buf[strlen(buf)-1] = 0;
       if(chdir(buf+3) < 0)
-        fprintf(stderr, "reporte erro\n");
+        fprintf(stderr, "Erro ao alterar o diretorio atual.\n");
       continue;
     }
     /* MARK END task1 */
@@ -174,7 +189,7 @@ int
 fork1(void)
 {
   int pid;
-  
+
   pid = fork();
   if(pid == -1)
     perror("fork");
@@ -236,7 +251,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
 {
   char *s;
   int ret;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -261,7 +276,7 @@ gettoken(char **ps, char *es, char **q, char **eq)
   }
   if(eq)
     *eq = s;
-  
+
   while(s < es && strchr(whitespace, *s))
     s++;
   *ps = s;
@@ -272,7 +287,7 @@ int
 peek(char **ps, char *es, char *toks)
 {
   char *s;
-  
+
   s = *ps;
   while(s < es && strchr(whitespace, *s))
     s++;
@@ -286,7 +301,7 @@ struct cmd *parseexec(char**, char*);
 
 /* Copiar os caracteres no buffer de entrada, comeando de s ate es.
  * Colocar terminador zero no final para obter um string valido. */
-char 
+char
 *mkcopy(char *s, char *es)
 {
   int n = es - s;
@@ -365,7 +380,7 @@ parseexec(char **ps, char *es)
   int tok, argc;
   struct execcmd *cmd;
   struct cmd *ret;
-  
+
   ret = execcmd();
   cmd = (struct execcmd*)ret;
 
@@ -391,4 +406,3 @@ parseexec(char **ps, char *es)
 }
 
 // vim: expandtab:ts=2:sw=2:sts=2
-
