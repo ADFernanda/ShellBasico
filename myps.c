@@ -159,8 +159,7 @@ void ImprimePSTree(t_Processo *processos, int posicaoPai, int numProc, int maxPr
 
 int main(){
 
-	FILE *file_childrenX=NULL; 
-	DIR *folder_proc=NULL;
+	FILE *file_childrenX=NULL;
 	char nameDir[NAME_MAX], aux[NAME_MAX];	
 	struct dirent* in_proc=NULL;
 	int checkFolder=0, pid=0, numProcs=0, child=0, i=0,n=0, posicaoProcesso=0;
@@ -171,12 +170,6 @@ int main(){
 
 	//printf("\n%d\n",numProcs );
 	PreencheDadosProcessos(processos, numProcs);
-
-	if ((folder_proc = opendir (PROC_PATH)) == NULL) 
-    {
-        fprintf(stderr, "Erro ao abrir o diretorio proc\n");
-        return 1;
-    }
 
     ImprimePSTree(processos, 0, 0, numProcs-1);
 
@@ -218,11 +211,6 @@ int main(){
  //            }
  //        i++;			
 	// }	
-
-    if(closedir(folder_proc) == -1){
-	    fprintf(stderr, "Erro ao fechar o /proc\n");
-	    return 1;
-  	}
 
 	free(processos);
 	return 0;
