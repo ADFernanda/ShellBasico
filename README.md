@@ -1,6 +1,9 @@
 TP1: Shell + PS (TOP) + Sinais + Módulos
 ========================================
 
+[Documentação](https://docs.google.com/document/d/1mK_HfR0YYOp4OC19EHdUr_IA0e2RxhXtGN0ONnLsIZs/edit?usp=sharing)
+
+
   1. Entrega no mesmo dia da Primeira Prova
   1. Pode ser feito em dupla
 
