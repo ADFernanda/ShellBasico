@@ -21,10 +21,6 @@
 
 #define MAXARGS 10
 
-#define TEMPORARY_FILE_PREFIX ".temp_"
-#define MAX_PID_DIGITS 6
-#define TEMPORARY_FILE_MAX_NAME 26
-
 /* Todos comandos tem um tipo.  Depois de olhar para o tipo do
  * comando, o código converte um *cmd para o tipo específico de
  * comando. */
@@ -56,50 +52,6 @@ struct pipecmd {
 int fork1(void);  // Fork mas fechar se ocorrer erro.
 struct cmd *parsecmd(char*); // Processar o linha de comando.
 
-void nop(){
-  return;
-}
-
-void freeExec(struct execcmd* ecmd){
-  int i;
-  for(i = 0; i < MAXARGS && (ecmd->argv)[i] != NULL; i++){
-    ((ecmd->argv)[i]) && ((ecmd->argv)[i] != NULL) ? free((ecmd->argv)[i]) : nop();
-  }
-  (ecmd) && (ecmd != NULL) ? free(ecmd) : nop();
-}
-
-void freeCmd(struct cmd* cmd);
-
-void freeRedir(struct redircmd* rcmd){
-  freeCmd(rcmd->cmd);
-  (rcmd->file) && (rcmd->file != NULL) ? free(rcmd->file) : nop();
-  (rcmd) && (rcmd != NULL) ? free(rcmd) : nop();
-}
-
-void freePipe(struct pipecmd* pcmd){
-  freeCmd(pcmd->left);
-  freeCmd(pcmd->right);
-  (pcmd) && (pcmd != NULL) ? free(pcmd) : nop();
-}
-
-void freeCmd(struct cmd* cmd){
-  switch(cmd->type){
-    default:
-      fprintf(stderr, "tipo de comando desconhecido\n");
-      exit(-1);
-    case ' ':
-      freeExec((struct execcmd*)cmd);
-      break;
-    case '<':
-    case '>':
-      freeRedir((struct redircmd*)cmd);
-      break;
-    case '|':
-      freePipe((struct pipecmd*)cmd);
-      break;
-  }
-}
-
 /* Executar comando cmd.  Nunca retorna. */
 void
 runcmd(struct cmd *cmd)
@@ -126,37 +78,33 @@ runcmd(struct cmd *cmd)
      * TAREFA2: Implemente codigo abaixo para executar
      * comandos simples. */
     //fprintf(stderr, "exec nao implementado\n");
-    //fprintf(stderr, "\n%s\n", ecmd->argv[0]);
     execvp(ecmd->argv[0], ecmd->argv);
     /* MARK END task2 */
-    freeExec(ecmd);
     break;
 
   case '>':
   	rcmd = (struct redircmd*)cmd;
-	int fd1 = open(rcmd->file, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-	if(fd1 == -1){
-		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
-	}else{
-		dup2(fd1 , STDOUT_FILENO);
-		close(fd1);
-	}
-	runcmd(rcmd->cmd);
-  freeRedir(rcmd);
+	  int fd1 = open(rcmd->file, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
+	  if(fd1 == -1){
+		  printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	  }else{
+		  dup2(fd1 , STDOUT_FILENO);
+		  close(fd1);
+	  }
+	  runcmd(rcmd->cmd);
     break;
 
   case '<':
     rcmd = (struct redircmd*)cmd;
-	int fd2 = open(rcmd->file, O_RDONLY, S_IRWXU);
-	if(fd2 == -1){
-		printf("Erro ao abrir o arquivo %s\n",rcmd->file );
-	}
-	else{
-		dup2(fd2, STDIN_FILENO);
-		close(fd2);
+	  int fd2 = open(rcmd->file, O_RDONLY, S_IRWXU);
+	  if(fd2 == -1){
+		  printf("Erro ao abrir o arquivo %s\n",rcmd->file );
+	  }
+	  else{
+		  dup2(fd2, STDIN_FILENO);
+		  close(fd2);
 	}
     runcmd(rcmd->cmd);
-    freeRedir(rcmd);
     break;
 
   case '|':
@@ -165,43 +113,39 @@ runcmd(struct cmd *cmd)
      * TAREFA4: Implemente codigo abaixo para executar
      * comando com pipes. */
     //fprintf(stderr, "pipe nao implementado\n");
-    int outFile, inFile, outPid, inPid, oldOut, oldIn;
-    char tempFileName[TEMPORARY_FILE_MAX_NAME], pidString[MAX_PID_DIGITS];
-    strcpy(tempFileName, TEMPORARY_FILE_PREFIX);
-    sprintf(pidString, "%d", getpid());
-    strcat(tempFileName, pidString);
-    outFile = open(tempFileName, O_WRONLY|O_CREAT|O_TRUNC, S_IRWXU);
-    //fprintf(stderr, "\n%s", tempFileName);
-    if(outFile == -1){
-      fprintf(stderr, "Erro ao abrir o arquivo %s para escrita", tempFileName);
+    int pipeFd[2], leftPid, leftStatus;
+
+    pipe(pipeFd);
+
+    if((leftPid = fork1()) == -1){
+      fprintf(stderr, "%s\n", "fork malsucedido");
     }
-    inFile = open(tempFileName, O_RDONLY, S_IRWXU);
-    if(inFile == -1){
-      fprintf(stderr, "Erro ao abrir o arquivo %s para leitura", tempFileName);
-    }
-    if((oldOut = dup(STDOUT_FILENO)) != -1 && dup2(outFile, STDOUT_FILENO) != -1){
-      close(outFile);
-      if((outPid = fork1()) == 0){
+
+    if(leftPid == 0){
+      if(dup2(pipeFd[STDOUT_FILENO], STDOUT_FILENO) >= 0){
+        close(pipeFd[STDIN_FILENO]);
+        close(pipeFd[STDOUT_FILENO]);
+
         runcmd(pcmd->left);
       }
-      if(dup2(oldOut, STDOUT_FILENO) != -1 &&
-        (oldIn  = dup(STDIN_FILENO)) != -1 && dup2(inFile, STDIN_FILENO) != -1)
-      {
-        close(inFile);
-        close(oldOut);
-        wait(&outPid);
-        if((inPid = fork1()) == 0){
-          runcmd(pcmd->right);
-        }
-        if(dup2(oldIn, STDIN_FILENO) != -1){
-          close(oldIn);
-          wait(&inPid);
-          remove(tempFileName);
-        }
+      else{
+        fprintf(stderr, "%s\n", "dup2 malsucedido");   
       }
     }
-    /* MARK END task4 */
-    freePipe(pcmd);
+    else{
+      if(dup2(pipeFd[STDIN_FILENO], STDIN_FILENO) >= 0){
+        close(pipeFd[STDIN_FILENO]);
+        close(pipeFd[STDOUT_FILENO]);
+
+        waitpid(leftPid, &leftStatus, 0);
+
+        runcmd(pcmd->right);
+      }
+      else{
+        fprintf(stderr, "%s\n", "dup2 malsucedido");   
+      }
+    }
+
     break;
   }
   exit(0);
@@ -243,7 +187,6 @@ main(void)
     if(fork1() == 0){
       parsedCmd = parsecmd(buf);
       runcmd(parsedCmd);
-      freeCmd(parsedCmd);
     }
     wait(&r);
   }
