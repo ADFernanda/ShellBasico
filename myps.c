@@ -113,47 +113,99 @@ int PesquisaBinaria (int pidBuscado, t_Processo *vector, int e, int d){
         return PesquisaBinaria(pidBuscado, vector, e, i-1);
 }
 
-void ImprimePSTree(t_Processo *processos, int posicaoPai, int numProc, int maxProcs){
+// void ImprimePSTree(t_Processo *processos, int posicaoPai, int numProc, int maxProcs){
+
+// 	FILE *file_childrenX=NULL;
+// 	char nameDir[NAME_MAX], aux[NAME_MAX];
+// 	int checkFolder=0, child=0, i=0,n=0;
+
+// 	if(numProc == maxProcs){
+// 		return;
+// 	}
+
+// 	//printf("%d %s\n",processos[posicaoPai].pid, processos[posicaoPai].nome );
+
+// 	//monta nome do arquivo children
+// 	n=sprintf (aux,"%d",processos[posicaoPai].pid );
+// 	strcpy(nameDir, PROC_PATH);
+//     strcat(nameDir, "/");
+//     strcat(nameDir, aux);
+//     strcat(nameDir, TASK_PATH);
+//     strcat(nameDir, "/");
+//     strcat(nameDir, aux);
+//     strcat(nameDir, "/");
+//     strcat(nameDir, CHILDREN_FILENAME);
+
+//     if((file_childrenX = fopen(nameDir, "r")) == NULL){
+//         return;
+//     }
+
+// 	//lê children
+// 	while(!feof(file_childrenX)){
+// 		fscanf(file_childrenX, "%d", &child);
+		
+// 		if(child==0){
+// 			return;
+// 		}	        		
+// 		printf("%d %s\n\t",processos[posicaoPai].pid, processos[posicaoPai].nome );
+// 		//printf("Pai: %d filho:%d \n", processos[posicaoPai].pid, child);
+// 		posicaoPai = PesquisaBinaria(child, processos, 0, maxProcs);
+// 		if(posicaoPai == -1){	        			
+// 			return;
+// 		}
+		
+// 		numProc++;		
+// 		ImprimePSTree(processos, posicaoPai, numProc, maxProcs);
+
+// 	}        		        
+// }
+
+void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 
 	FILE *file_childrenX=NULL;
 	char nameDir[NAME_MAX], aux[NAME_MAX];
-	int checkFolder=0, child=0, i=0,n=0;	
+	int i=0, j=0, n=0, child=0;
 
-	if(numProc == maxProcs){
-		return;
-	}
-	else{
-
-		printf("%d %s\n",processos[posicaoPai].pid, processos[posicaoPai].nome );
-
-		//monta nome do arquivo children
-		n=sprintf (aux,"%d",processos[posicaoPai].pid );
+    for(i=0;i<numProcs;i++){
+    	j=0;
+    	child=0;
+    	//monta nome do arquivo children
+    	n=sprintf (aux,"%d",processos[i].pid );
 		strcpy(nameDir, PROC_PATH);
-	    strcat(nameDir, "/");
-	    strcat(nameDir, aux);
-	    strcat(nameDir, TASK_PATH);
-	    strcat(nameDir, "/");
-	    strcat(nameDir, aux);
-	    strcat(nameDir, "/");
-	    strcat(nameDir, CHILDREN_FILENAME);
+		strcat(nameDir, "/");
+		strcat(nameDir, aux);
+		strcat(nameDir, TASK_PATH);
+		strcat(nameDir, "/");
+		strcat(nameDir, aux);
+		strcat(nameDir, "/");
+		strcat(nameDir, CHILDREN_FILENAME);
 
-	    if((file_childrenX = fopen(nameDir, "r")) == NULL){
-	            return;
-        }else{
+		matrix[i][j] = processos[i].pid;
+		j++;
+		//printf("pai: %d\n", matrix[i][j]);
 
-        	//lê children
-        	while(!feof(file_childrenX)){
-        		fscanf(file_childrenX, "%d", &child);	        		
-        		posicaoPai = PesquisaBinaria(child, processos, 0, maxProcs);
-        		if(posicaoPai == -1){	        			
-        			return;
-        		}
-        		printf("\t");
-        		numProc++;
-        		ImprimePSTree(processos, posicaoPai, numProc, maxProcs);
-        	}        		
+		if((file_childrenX = fopen(nameDir, "r")) == NULL){
+            fprintf(stderr, "Erro ao abrir arquivo: %s\n", nameDir);
+	    }else{
+
+			//lê children
+			while(!feof(file_childrenX)){
+				fscanf(file_childrenX, "%d", &child);
+				
+				if(child!=0){
+					matrix[i][j] = child;
+				}
+				j++;	        					
+			}
+
+		    
+		}
+		if(fclose(file_childrenX) != 0){
+        	fprintf(stderr, "Erro ao fechar arquivo %s\n", nameDir);
         }
-	}
+
+
+    }
 
 }
 
@@ -162,56 +214,34 @@ int main(){
 	FILE *file_childrenX=NULL;
 	char nameDir[NAME_MAX], aux[NAME_MAX];	
 	struct dirent* in_proc=NULL;
-	int checkFolder=0, pid=0, numProcs=0, child=0, i=0,n=0, posicaoProcesso=0;
+	int checkFolder=0, pid=0, numProcs=0, child=0, i=0,n=0, posicaoProcesso=0, j=0;
 	t_Processo *processos=NULL, processo;	
+	int **matrix = NULL;
 
 	numProcs = ContaProcessos();
-	processos = (t_Processo*) calloc (numProcs,sizeof(t_Processo));
-
-	//printf("\n%d\n",numProcs );
+	processos = (t_Processo*) calloc (numProcs+1,sizeof(t_Processo));
+	matrix = (int**) calloc (numProcs+1,sizeof(int*));
 	PreencheDadosProcessos(processos, numProcs);
 
-    ImprimePSTree(processos, 0, 0, numProcs-1);
+	for(i=0;i<=numProcs;i++){
+		matrix[i] = (int*) calloc (numProcs,sizeof(int*));		
+	}	
+	
+	LeChildren(matrix, numProcs,processos);
 
- //    while (i<numProcs) {    	   
-    	   	    		
- //    		//monta nome do arquivo children
- //    		n=sprintf (aux,"%d",processos[i].pid );
- //    		strcpy(nameDir, PROC_PATH);
-	// 	    strcat(nameDir, "/");
-	// 	    strcat(nameDir, aux);
-	// 	    strcat(nameDir, TASK_PATH);
-	// 	    strcat(nameDir, "/");
-	// 	    strcat(nameDir, aux);
-	// 	    strcat(nameDir, "/");
-	// 	    strcat(nameDir, CHILDREN_FILENAME);
-	// 	    //printf("\n%s\n", nameDir);
+	for(i=0;i<numProcs;i++){
+		for(j=0;j<10;j++){
+			printf("%d ",matrix[i][j]);
+		}
+		printf("\n");
+	}
 
-	// 	    //imprimi pai
-	// 	    printf("%d %s\n",processos[i].pid, processos[i].nome);
 
- //    		// lê arquivos de children
- //    		if((file_childrenX = fopen(nameDir, "r")) == NULL){
-	// 	            fprintf(stderr, "Erro ao abrir arquivo: %s\n", nameDir);
-	//         }else{
-
-	//         	//lê children
-	//         	while(!feof(file_childrenX)){
-	//         		fscanf(file_childrenX, "%d", &child);	        		
-	//         		posicaoProcesso = PesquisaBinaria(child, processos, 0, numProcs-1);
-	//         		if(posicaoProcesso == -1){
-	//         			printf("Erro. Processo filho de pid %d de %s não encontrado.\n",child, processos[i].nome );
-	//         		}
-	//         		printf("\t%d %s\n",processos[posicaoProcesso].pid, processos[posicaoProcesso].nome );
-	//         	}        		
-	//         }
-
-	//         if(fclose(file_childrenX) != 0){
- //            	fprintf(stderr, "Erro ao fechar arquivo %s\n", nameDir);
- //            }
- //        i++;			
-	// }	
 
 	free(processos);
+	for(i=0;i<=numProcs;i++){
+		free(matrix[i]);
+	}	
+	free(matrix);
 	return 0;
 }
