@@ -113,53 +113,6 @@ int PesquisaBinaria (int pidBuscado, t_Processo *vector, int e, int d){
         return PesquisaBinaria(pidBuscado, vector, e, i-1);
 }
 
-// void ImprimePSTree(t_Processo *processos, int posicaoPai, int numProc, int maxProcs){
-
-// 	FILE *file_childrenX=NULL;
-// 	char nameDir[NAME_MAX], aux[NAME_MAX];
-// 	int checkFolder=0, child=0, i=0,n=0;
-
-// 	if(numProc == maxProcs){
-// 		return;
-// 	}
-
-// 	//printf("%d %s\n",processos[posicaoPai].pid, processos[posicaoPai].nome );
-
-// 	//monta nome do arquivo children
-// 	n=sprintf (aux,"%d",processos[posicaoPai].pid );
-// 	strcpy(nameDir, PROC_PATH);
-//     strcat(nameDir, "/");
-//     strcat(nameDir, aux);
-//     strcat(nameDir, TASK_PATH);
-//     strcat(nameDir, "/");
-//     strcat(nameDir, aux);
-//     strcat(nameDir, "/");
-//     strcat(nameDir, CHILDREN_FILENAME);
-
-//     if((file_childrenX = fopen(nameDir, "r")) == NULL){
-//         return;
-//     }
-
-// 	//lê children
-// 	while(!feof(file_childrenX)){
-// 		fscanf(file_childrenX, "%d", &child);
-		
-// 		if(child==0){
-// 			return;
-// 		}	        		
-// 		printf("%d %s\n\t",processos[posicaoPai].pid, processos[posicaoPai].nome );
-// 		//printf("Pai: %d filho:%d \n", processos[posicaoPai].pid, child);
-// 		posicaoPai = PesquisaBinaria(child, processos, 0, maxProcs);
-// 		if(posicaoPai == -1){	        			
-// 			return;
-// 		}
-		
-// 		numProc++;		
-// 		ImprimePSTree(processos, posicaoPai, numProc, maxProcs);
-
-// 	}        		        
-// }
-
 void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 
 	FILE *file_childrenX=NULL;
@@ -192,7 +145,7 @@ void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 			while(!feof(file_childrenX)){
 				fscanf(file_childrenX, "%d", &child);
 				
-				if(child!=0){
+				if(child!=0 && matrix[i][j-1]!=child){
 					matrix[i][j] = child;
 				}
 				j++;	        					
@@ -209,6 +162,29 @@ void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 
 }
 
+void ImprimePSTree(t_Processo *processos, int **matrix, int numProcs, int count, int iPai, int jFilho){
+	int posicaoPai=0;
+
+	if(numProcs <= count){
+		return;
+	}
+
+	while(matrix[iPai][jFilho] != 0){		
+
+		posicaoPai = PesquisaBinaria(matrix[iPai][jFilho], processos, 0, numProcs);
+
+		if(posicaoPai!=-1){
+			printf("%d %s\n", processos[posicaoPai].pid, processos[posicaoPai].nome);
+
+		}
+		printf("%d %d\n", iPai, jFilho );
+		ImprimePSTree(processos, matrix, numProcs, count+1, posicaoPai, jFilho+1); //posicaoPai também corresponde à linha do processo na matriz
+			
+	}
+	//ImprimePSTree(processos, matrix, numProcs, count+1, iPai+1, 1);
+		
+}
+
 int main(){
 
 	FILE *file_childrenX=NULL;
@@ -216,7 +192,7 @@ int main(){
 	struct dirent* in_proc=NULL;
 	int checkFolder=0, pid=0, numProcs=0, child=0, i=0,n=0, posicaoProcesso=0, j=0;
 	t_Processo *processos=NULL, processo;	
-	int **matrix = NULL;
+	int **matrix = NULL, posicaoPai=0;
 
 	numProcs = ContaProcessos();
 	processos = (t_Processo*) calloc (numProcs+1,sizeof(t_Processo));
@@ -229,14 +205,15 @@ int main(){
 	
 	LeChildren(matrix, numProcs,processos);
 
-	for(i=0;i<numProcs;i++){
-		for(j=0;j<10;j++){
-			printf("%d ",matrix[i][j]);
-		}
-		printf("\n");
-	}
+	printf("%d %s\n", processos[0].pid, processos[0].nome);
+	ImprimePSTree(processos, matrix, numProcs, 0, 0, 1);
 
-
+	// for(i=0;i<numProcs;i++){
+	// 	for(j=0;j<20;j++){
+	// 		printf("%d ",matrix[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
 
 	free(processos);
 	for(i=0;i<=numProcs;i++){
