@@ -77,8 +77,8 @@ void PreencheDadosProcessos(t_Processo *processos, int numProcs){
     		if((file_statX = fopen(nameDir, "r")) == NULL){
 	            fprintf(stderr, "Erro ao abrir arquivo de stat: %s\n", nameDir);
 	        }else{
-	            fscanf(file_statX, "%d", &processos[i].pid);
-	            fscanf(file_statX, " %s ", processos[i].nome);
+	            fscanf(file_statX, "%d", &(processos[i].pid));
+	            fscanf(file_statX, " %s", processos[i].nome);
 	        }	        
 
 			// printf("%d %s\n",processos[i].pid, processos[i].nome);
@@ -143,9 +143,7 @@ void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 
 			//lê children
 			while(!feof(file_childrenX)){
-				fscanf(file_childrenX, "%d", &child);
-				
-				if(child!=0 && matrix[i][j-1]!=child){
+				if(fscanf(file_childrenX, "%d ", &child) == 1){
 					matrix[i][j] = child;
 				}
 				j++;	        					
@@ -163,22 +161,26 @@ void LeChildren(int **matrix, int numProcs,t_Processo *processos){
 }
 
 void ImprimePSTree(t_Processo *processos, int **matrix, int numProcs, int count, int iPai, int jFilho){
-	int posicaoPai=0;
+	
+	int posicaoPai=0, auxCount;
 
 	if(numProcs <= count){
 		return;
 	}
 
-	while(matrix[iPai][jFilho] != 0){		
+	while(matrix[iPai][jFilho] != 0){
 
 		posicaoPai = PesquisaBinaria(matrix[iPai][jFilho], processos, 0, numProcs);
 
 		if(posicaoPai!=-1){
+			for(auxCount = count; auxCount >= 0; auxCount--){
+				printf("    ");
+			}
 			printf("%d %s\n", processos[posicaoPai].pid, processos[posicaoPai].nome);
-
+			ImprimePSTree(processos, matrix, numProcs, count+1, posicaoPai, 1); //posicaoPai também corresponde à linha do processo na matriz
 		}
-		printf("%d %d\n", iPai, jFilho );
-		ImprimePSTree(processos, matrix, numProcs, count+1, posicaoPai, jFilho+1); //posicaoPai também corresponde à linha do processo na matriz
+		jFilho++;
+		//printf("%d %d\n", iPai, jFilho );
 			
 	}
 	//ImprimePSTree(processos, matrix, numProcs, count+1, iPai+1, 1);
@@ -195,15 +197,15 @@ int main(){
 	int **matrix = NULL, posicaoPai=0;
 
 	numProcs = ContaProcessos();
-	processos = (t_Processo*) calloc (numProcs+1,sizeof(t_Processo));
-	matrix = (int**) calloc (numProcs+1,sizeof(int*));
+	processos = (t_Processo*) calloc (numProcs,sizeof(t_Processo));
+	matrix = (int**) calloc (numProcs,sizeof(int*));
 	PreencheDadosProcessos(processos, numProcs);
 
 	for(i=0;i<=numProcs;i++){
 		matrix[i] = (int*) calloc (numProcs,sizeof(int*));		
 	}	
 	
-	LeChildren(matrix, numProcs,processos);
+	LeChildren(matrix, numProcs, processos);
 
 	printf("%d %s\n", processos[0].pid, processos[0].nome);
 	ImprimePSTree(processos, matrix, numProcs, 0, 0, 1);
