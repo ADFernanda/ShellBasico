@@ -40,7 +40,7 @@ int main(char *argv[], int argc){
         return 1;
       }
 
-      printf("\e[H");
+      printf("\e[2J\e[H\e[3J");
 
       printf("%8s|%16s|%24s|%8s|\n", "PID", "User", "PROCNAME", "Estado");
       printf("%8s|%16s|%24s|%8s|\n",  "--------", "----------------", "------------------------",
